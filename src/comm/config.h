@@ -1,0 +1,6 @@
+#ifndef COMM_CONFIG_H
+#define COMM_CONFIG_H
+
+#define LISTENER_THREAD_NUM (4)
+
+#endif // COMM_CONFIG_H
