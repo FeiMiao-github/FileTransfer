@@ -3,11 +3,14 @@
 #include "http_handler_mgr.h"
 #include "info.h"
 #include "log.h"
+#include "global_config.h"
 
 int main(int argc, char** argv)
 {
     ft::server::cmdline_parser parser;
     parser.parse(argc, argv);
+
+    ft::server::global_config::instance().set_upload_dir(parser.get_base_dir());
 
     ft::server::log::init();
     ft::server::info().dump();

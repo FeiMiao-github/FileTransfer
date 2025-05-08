@@ -4,6 +4,7 @@
 #include <fstream>
 #include <map>
 #include "formdata_parser.h"
+#include "../global_config.h"
 
 static constexpr std::string SECTION_FILE = "file";
 static constexpr std::string SECTION_FILEID = "fileId";
@@ -53,11 +54,59 @@ void ft::server::http_upload_handler::process_multipart(const request_t<string_b
     }
 
     auto & filename_sec = formdata_secs[SECTION_FILENAME];
-    std::string_view filename = body.substr(filename_sec.begin, filename_sec.end - filename_sec.begin);
-    LOG_INFO() << "filename: " << filename;
+    auto filename = body.substr(filename_sec.begin, filename_sec.end - filename_sec.begin);
+    // std::string_view filename = body.substr(filename_sec.begin, filename_sec.end - filename_sec.begin);
+    // LOG_INFO() << "filename: " << filename;
+
+    auto& chunk_index_sec = formdata_secs[SECTION_CHUNKINDEX];
+    auto& total_chunks_sec = formdata_secs[SECTION_TOTALCHUNKS];
+    auto chunk_index = std::stoul(std::string(body.substr(chunk_index_sec.begin, chunk_index_sec.end - chunk_index_sec.begin)));
+    auto total_chunks = std::stoul(std::string(body.substr(total_chunks_sec.begin, total_chunks_sec.end - total_chunks_sec.begin)));
+    LOG_INFO() << "chunk index: " << chunk_index << ", total chunks: " << total_chunks;
+
+    auto fileid_sec = formdata_secs[SECTION_FILEID];
+    auto fileid = std::string(body.substr(fileid_sec.begin, fileid_sec.end - fileid_sec.begin));
+    LOG_INFO() << "fileid: " << fileid;
+
+    auto uploaddir = boost::filesystem::path(global_config::instance().get_upload_dir());
+    if (!boost::filesystem::exists(uploaddir))
+    {
+        throw http_internal_error(std::string("upload dir ") + uploaddir.string() + " not found.");
+    }
+
+    // 检查fileid目录是否存在
+    auto file_dir = uploaddir / fileid;
+    if (!boost::filesystem::exists(file_dir))
+    {
+        boost::filesystem::create_directory(file_dir);
+    }
+
+    auto file_path = file_dir / (std::to_string(chunk_index) + "_" + std::to_string(total_chunks) + ".part");
 
     auto& file_sec = formdata_secs[SECTION_FILE];
-    std::ofstream ofs(std::string(filename), std::ios::binary);
+    std::ofstream ofs(file_path.c_str(), std::ios::binary);
     ofs << body.substr(file_sec.begin, file_sec.end - file_sec.begin);
     ofs.close();
+
+    // 计算file_path下的.part文件个数
+    int count = 0;
+    for (auto & entry : boost::filesystem::directory_iterator(file_dir)) {
+        if (entry.path().extension() == ".part") {
+            count++;
+        }
+    }
+
+    if (count == total_chunks) {
+        // 合并文件
+        std::ofstream ofs(uploaddir / filename, std::ios::binary);
+        for (int i = 0; i < total_chunks; i++) {
+            auto part_file = file_dir / (std::to_string(i) + "_" + std::to_string(total_chunks) + ".part");
+            std::ifstream ifs(part_file.c_str(), std::ios::binary);
+            ofs << ifs.rdbuf();
+            ifs.close();
+            boost::filesystem::remove(part_file);
+        }
+        boost::filesystem::remove(file_dir);
+        ofs.close();
+    }
 }

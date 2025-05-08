@@ -13,6 +13,7 @@ class cmdline_parser {
 
     void parse(int argc, char** argv);
     short get_port() const { return m_port; }
+    const std::string& get_base_dir() const { return m_base_dir; }
 
    private:
     short m_port;
