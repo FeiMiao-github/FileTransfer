@@ -2,6 +2,7 @@
 
 #include "../comm/def.h"
 #include <string>
+#include <boost/filesystem.hpp>
 
 FT_SERVER_NSP_START
 
@@ -22,11 +23,17 @@ private:
     global_config& operator=(global_config&&) = delete;
 
 public:
-    void set_upload_dir(const std::string& dir) { upload_dir = dir; }
-    const std::string& get_upload_dir() const { return upload_dir; }
+    void set_upload_dir(const std::string& dir) { m_upload_dir = boost::filesystem::canonical(dir); }
+    const auto& get_upload_dir() const { return m_upload_dir; }
+
+    void set_html_dir(const std::string& dir) { m_html_dir = boost::filesystem::canonical(dir); }
+    const auto& get_html_dir() const { return m_html_dir; }
+
+    void dump() const;
 
 private:
-    std::string upload_dir;
+    boost::filesystem::path m_upload_dir;
+    boost::filesystem::path m_html_dir;
 };
 
 FT_SERVER_NSP_END

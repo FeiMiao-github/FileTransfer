@@ -11,9 +11,11 @@ int main(int argc, char** argv)
     parser.parse(argc, argv);
 
     ft::server::global_config::instance().set_upload_dir(parser.get_base_dir());
+    ft::server::global_config::instance().set_html_dir(parser.get_html_dir());
 
     ft::server::log::init();
     ft::server::info().dump();
+    ft::server::global_config::instance().dump();
 
     auto mgr = std::make_shared<ft::server::http_handler_mgr>();
     mgr->init();

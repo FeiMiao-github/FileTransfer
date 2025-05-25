@@ -12,6 +12,7 @@
 #include "http_exception.h"
 #include "http_handler.h"
 #include "log.h"
+#include "global_config.h"
 
 FT_SERVER_NSP_START
 
@@ -51,6 +52,9 @@ public:
             }
             catch (http_not_found e) {
                 auto file_handler = http_file_handler();
+                auto filepath = global_config::instance().get_html_dir();
+                LOG_INFO() << "filepath: " << filepath;
+                file_handler.set_file_path(filepath / std::string(req.target()));
                 http_base_handler* ptr = &file_handler;
                 return ptr->handle_request(req);
             }

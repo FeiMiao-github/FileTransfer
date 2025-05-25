@@ -1,6 +1,7 @@
 #include "http_handler_mgr.h"
 #include "log.h"
 #include "api.h"
+#include "global_config.h"
 
 using namespace ft::server;
 
@@ -9,10 +10,13 @@ using request_parser_t = boost::beast::http::request_parser<T>;
 using empty_body_t = boost::beast::http::empty_body;
 
 void http_handler_mgr::init() {
-    register_handler(verb::get, "/", std::make_unique<http_file_handler>());
+    // auto file_handler = std::make_unique<http_file_handler>();
+    // file_handler->set_file_path(global_config::instance().get_html_dir());
+    // register_handler(verb::get, "/", std::move(file_handler));
     register_handler(verb::get, "/api/getlist", std::make_unique<http_get_list_handler>());
     register_handler(verb::delete_, "/api/delete", std::make_unique<http_del_handler>());
     register_handler(verb::post, "/api/upload", std::make_unique<http_upload_handler>());
+    register_handler(verb::get, "/api/download", std::make_unique<http_download_handler>());
 }
 
 void http_handler_mgr::deinit() {
